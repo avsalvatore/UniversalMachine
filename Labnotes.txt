@@ -1,0 +1,62 @@
+Jake Indursky and Alex Salvatore
+Homework 7 Lab Notes
+November 15, 2014
+
+Starting Point: 
+        For this assignment, we will be profiling the Universal Machine project
+for which we were partners. To the best of our knowledge, our UM is in full 
+working condition. 
+
+
+
+Time Table: 
+
+-------------------------------------------------------------------------------
+| benchmark | time  | Instru- | Rel to | Rel to | Improvement
+|           |       | ctions  | start  | prev   |  
+|           |       |(x 10^10)|
+-------------------------------------------------------------------------------
+| midmark   |6.676  | 4.309732|1.000   |1.000   |This is the starting point 
+| advent    |61.731 |         |1.000   |1.000   |
+| sandmark  |169.629|         |1.000   |1.000   |
+-------------------------------------------------------------------------------
+| midmark   |2.071  | 1.831590|0.310   |0.310   | compiled with optimization
+| advent    |18.768 |         |0.304   |0.304   | and linked against -lcii-O1
+| sandmark  |51.320 |         |0.303   |0.303   | 
+-------------------------------------------------------------------------------
+| midmark   |1.658  |1.7398387|0.248   |0.800   |compiled with opitimization
+| advent    |14.885 |         |0.241   |0.793   |and linked against -lcii-O2
+| sandmark  |40.750 |         |0.240   |0.794   |
+-------------------------------------------------------------------------------
+| midmark   |1.476  |1.5509263|0.221   |0.890   | put switch case from
+| advent    |13.237 |         |0.214   |0.889   | instruction interface into 
+| sandmark  |36.510 |         |0.215   |0.896   | the emulator
+--------------------------------------------------------------------------------
+| midmark   |0.650  |0.3279071|0.097   |0.440   | removed bitpack interface
+| advent    |6.094  |         |0.095   |0.460   | from emulator entirely
+| sandmark  |15.971 |         |0.094   |0.437   |
+--------------------------------------------------------------------------------
+| midmark   |1.971  |0.9208731|0.295   |0.940   | only unpacked register
+| advent    |19.120 |         |0.310   |1.042   | values needed for given
+| sandmark  |48.917 |         |0.288   |0.937   | instruction.
+--------------------------------------------------------------------------------
+| midmark   |0.624  |0.3355535|0.093   |0.362   | removed static inline 
+| advent    |5.695  |         |0.092   |0.345   | functions for each 
+| sandmark  |15.466 |         |0.091   |0.362   | instruction.
+-------------------------------------------------------------------------------
+| midmark   |0.340  |0.2470171|0.051   |0.545   | -- inlined getword 
+| advent    |3.655  |         |0.642   |0.642   |
+| sandmark  |8.288  |         |0.049   |0.536   |
+-------------------------------------------------------------------------------
+| midmark   |0.306  |0.2263393|0.046   |0.900   | -- inlined emulator
+| advent    |3.402  |         |0.055   |0.931   |
+| sandmark  |7.491  |         |0.044   |0.930   |
+-------------------------------------------------------------------------------
+| midmark   |0.298  |0.2264787|0.045   |0.974   |--inlined programloader
+| advent    |3.200  |         |0.052   |0.941   |
+| sandmark  |7.436  |         |0.044   |0.993   |
+-------------------------------------------------------------------------------
+| midmark   |0.287  |0.2259457|0.043   |0.963   | added local variables in
+| advent    |3.089  |         |0.050   |0.965   | memory.h
+| sandmark  |7.157  |         |0.042   |0.962   |
+-------------------------------------------------------------------------------

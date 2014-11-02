@@ -1,0 +1,10 @@
+#!/bin/sh
+. /usr/sup/use/use.sh
+use comp40
+for i in midmark.um sandmark.umz # runs time on both of these
+do
+	/usr/bin/time -f "um $i: %e seconds" ./um $i > /dev/null
+done
+
+/usr/bin/time -f "um advent.umz: %e seconds" ./um advent.umz < advinput.txt > /dev/null
+

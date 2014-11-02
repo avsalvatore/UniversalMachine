@@ -1,0 +1,126 @@
+/*
+ * instructions.c
+ * Jake Indursky and Alex Salvatore
+ * November 12, 2013
+ * Manages the execution of instructions. Only executes one instruction per
+ * call to its public function perform_instr.
+ */
+
+
+#include "instructions.h"
+
+
+#define MAX_VAL_32_BIT 4294967296
+
+
+static inline void cond_move(int A, int B, int C, Um_word *reg)
+{
+        if (reg[C] != 0) {
+                reg[A] = reg[B];
+        }
+}
+
+static inline void seg_load(int A, int B, int C, Um_word *reg, Mem_T memory)
+{
+        reg[A] = get_word(reg[B], reg[C], memory);
+}
+
+static inline void seg_store(int A, int B, int C, Um_word *reg, Mem_T memory)
+{
+        put_word(reg[A], reg[B], reg[C], memory);
+}
+
+static inline void add(int A, int B, int C, Um_word *reg)
+{
+        reg[A] = (reg[B] + reg[C]) % MAX_VAL_32_BIT;
+}
+
+static inline void multiply(int A, int B, int C, Um_word *reg)
+{
+
+        reg[A] = (reg[B] * reg[C]) % MAX_VAL_32_BIT;
+}
+
+static inline void divide(int A, int B, int C, Um_word *reg)
+{
+        reg[A] = reg[B] / reg[C];
+}
+
+static inline void bnand(int A, int B, int C, Um_word *reg)
+{
+       reg[A] = ~(reg[B] & reg[C]);
+}
+
+static inline void input(int C, Um_word *reg)
+{
+        int check = fgetc(stdin);
+        if(check == EOF) {
+                reg[C] = ~0;
+	} else {
+	    reg[C] = check;
+	}
+	
+}
+
+/*
+ * takes in an instruction value, and 3 indices for the array of registers
+ * and memory
+ * Uses the registers and memory as specified by the instruction
+ */
+unsigned perform_instr(Um_opcode instr, int A, int B, int C, 
+                       Um_word *reg, Mem_T memory)
+{
+        
+        switch (instr) {
+        case 0:
+                cond_move(A, B, C, reg);
+                break;
+        case 1:
+                seg_load(A, B, C, reg, memory);
+                break;
+        case 2:
+                seg_store(A, B, C, reg, memory);
+                break;
+        case 3:
+                add(A, B, C, reg);
+                break;
+        case 4:
+                multiply(A, B, C, reg);
+                break;
+        case 5:
+                divide(A, B, C, reg);
+                break;
+        case 6:
+                bnand(A, B, C, reg);
+                break;
+        case 7:
+                return 0; 
+        case 8:
+                reg[B] = map_seg(reg[C], memory);
+                break;
+        case 9:
+                unmap_seg(reg[C], memory);
+                break;
+        case 10:
+                assert (reg[C] > 0 || reg[C] <= 255);
+                putc(reg[C], stdout);
+                break;
+        case 11:
+                input(C, reg);
+                break;
+        case 12:
+                load_program(reg[B], memory);
+                break;
+        case 13:
+                reg[A] = B;
+                break;
+        default:
+                exit(1);
+        }
+
+        return 1;
+
+}
+
+
+

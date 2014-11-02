@@ -1,0 +1,192 @@
+/*
+ * memory.c
+ * Jake Indursky and Alex Salvatore
+ * November 12, 2013
+ * Implementation for the segmented memory interface
+ *
+ */
+#include "memory.h"
+
+#define T Mem_T
+#define MAX_VAL_32_BIT 4294967296
+#define EMPTY -1
+
+
+struct T {
+        int64_t num_segments;
+    	int last_mapped; /*index of last_mapped segment */
+    	int *unmapped; /*array of indices of any unmapped segments */
+    	int last_unmapped; /*index for end of unmapped array */
+    	int *lengths; /*array for lengths of segments */
+        Um_word **segments;
+};
+
+/*
+ * Initializes a new Mem_T, and takes in the amount of instructions read
+ * in by the program_loader, in order to allocate memory for segment 0
+ * Allocates 1000 segments in memory to start te program
+ */
+T Mem_new(int length)
+{
+        T mem = malloc(sizeof(*mem));
+
+        mem->num_segments = 1000;
+        mem->last_unmapped = EMPTY;             
+        mem->last_mapped = 1;
+
+        mem->lengths =  malloc(sizeof(int) * mem->num_segments);
+        assert(mem->lengths);
+
+        mem->segments = malloc(sizeof(Um_word *) * mem->num_segments);
+        assert(mem->segments);
+
+        mem->unmapped = malloc(sizeof(int) * mem->num_segments);
+        assert(mem->unmapped);
+
+        mem->segments[0] = malloc(sizeof(Um_word) * length);
+        assert(mem->segments[0]);
+
+        mem->lengths[0] = length;
+        return mem;
+}
+
+Um_word get_word(Seg_id index, int offset, T mem)
+{
+        return mem->segments[index][offset];
+}
+
+/* returns length of a given segment */
+int get_length(Seg_id index, T mem)
+{
+        return mem->lengths[index];
+}
+
+
+void put_word(Seg_id index, int offset, Um_word word, T mem)
+{
+        mem->segments[index][offset] = word;
+}
+
+/*
+ * checks to see if there should be more space allocated for segments to be
+ * mapped. This is the case if the last mapped segment is equal to the number
+ * of segments that have been malloced and if there are no unmapped segments
+ * in the middle of memory
+ * If true, the function allocates memory for 1000 more segments, or up to 2^32
+ */
+static inline void mem_check(T mem) 
+{
+         
+          if (mem->last_unmapped == EMPTY && 
+	      mem->last_mapped == mem->num_segments) { 
+	      		mem->num_segments = mem->num_segments + 1000;
+			if (mem->num_segments > MAX_VAL_32_BIT) {
+			    mem->num_segments = MAX_VAL_32_BIT;
+			}
+			mem->segments = realloc(mem->segments,
+						sizeof(Um_word *) * 
+						mem->num_segments);
+                        assert(mem->segments);
+			mem->lengths = realloc(mem->lengths,
+					       sizeof(int) * 
+					       mem->num_segments);
+                        assert(mem->lengths);
+			mem->unmapped = realloc(mem->unmapped,
+						sizeof(int) * 
+						mem->num_segments);
+                        assert(mem->unmapped);
+        }
+}
+
+/* 
+ * maps a segment in memory of a given length, and sets the words in that 
+ * segment to 0
+ */
+Seg_id map_seg(int seg_length, T mem)
+{
+        int i;
+        int index = mem->last_mapped;
+        mem_check(mem);
+      
+/*
+ * if there is an unmapped segment in the middle of memory, that will be the 
+ * segment to be mapped
+ */
+        if (mem->last_unmapped != EMPTY) {
+      
+                index = mem->unmapped[mem->last_unmapped];
+                mem->last_unmapped--;
+      
+        } else {
+                mem->last_mapped++;
+        }
+	
+	mem->segments[index] = malloc(sizeof(Um_word) * seg_length);
+        assert(mem->segments[index]);
+
+        for (i = 0; i < seg_length; i++) {
+                mem->segments[index][i] = 0;
+        }
+
+        mem->lengths[index] = seg_length;
+        return index;
+}
+
+
+
+/* Unmaps a specific segment and puts that index in the unmapped array */
+void unmap_seg(Seg_id index, T mem)
+{
+        free(mem->segments[index]);
+	mem->segments[index] = NULL;
+        mem->lengths[index] = 0;
+        mem->last_unmapped++;
+        mem->unmapped[mem->last_unmapped] = index;
+}
+
+/* loads a set of 32 bits from a given segment into segment 0 */
+void load_program(Seg_id to_copy, T mem)
+{
+    /* if it loads itself, just return */  
+    if (to_copy == 0) {
+	return;
+    }
+/*
+ * if the segment to be loaded is larger than the 0 segment, allocate necessary
+ * memory
+ */
+    int i;
+    if (mem->lengths[to_copy] > mem->lengths[0]) {
+
+	mem->segments[0] = realloc(mem->segments[0], sizeof(Um_word) 
+				   * mem->lengths[to_copy]);
+	assert(mem->segments[0] != NULL);
+    }
+
+    for (i = 0; i < mem->lengths[to_copy]; i++) {
+	mem->segments[0][i] = mem->segments[to_copy][i];
+    }
+    mem->lengths[0] = mem->lengths[to_copy];
+        
+}
+
+/* 
+ *frees each mapped segment in memory, and any other dynamically allocated
+ * memory
+ */
+void Memory_free(T *mem)
+{
+        int i;
+        for(i = 0; i < (*mem)->last_mapped; i++) {
+                if((*mem)->segments[i] != NULL) {
+                        free((*mem)->segments[i]);
+                }
+        }
+        free((*mem)->segments);
+        free((*mem)->lengths);
+        free((*mem)->unmapped);
+        free(*mem);
+}
+
+
+#undef T

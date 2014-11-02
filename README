@@ -1,0 +1,46 @@
+Jacob Indursky and Alex Salvatore
+Homework 7 -- profiling
+
+Help: Justin Shiiba helped with our compile script
+
+Hours spent analyzing: 3
+Hours spent solving: 2
+
+
+Analysis of assembly code: 
+
+        While doing this profiling, we incrementally static inlined all of
+our modules. This took away function call overhead from the main. From our 
+Labnotes file, it is easy to see the speed increase we achieved at each stage of
+the inlining process. We found that inlining all of our functions significantly
+optimized our um performance. Now, however, There is no process that takes up
+an amount of time as according to the assembly code, all functions have been 
+put into the main. 
+
+Before we started the process of inlining all of our functions to main, 
+we looked at which process was taking the longest. Our emulator was calling
+get_word from the memory interface and it was taking 21.28% of our program.
+
+Analysis of assembly code of get_word(Seg_id index, int offset, T mem)
+in memory.c:
+
+ mov    0x28(%rdx), %rax
+ mov    %edi, %edi
+ movslq %esi, %rsi
+ mov    (%rax, %rdi, 8), %rax
+ mov    (%rax, %rsi, 4), %eac
+ retq
+
+
+After careful analysis, we realize we still have to read in each parameter
+and then access a part of the array. The minimum amount of instructions for
+this is 5 and that is what we have. We considered changing the int to an
+unsigned, however, it would continue to be the same amount of actual
+instructions in our assembly code. Without changing our data structure, we
+do not see a way to improve this assembly code. Even with a chnage in 
+data structure, we are not confident it would help as this code is already 
+very clean. Inlining this function, however, eliminates three lines of asembly
+code which is over half of the instructions for the function. Our labnotes show
+the significance time-wise of inlining this particular function.
+
+

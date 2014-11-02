@@ -1,0 +1,87 @@
+/*
+ * emulator.c
+ * Jake Indursky and Alex Salvatore
+ * November 12, 2013
+ * reads words from segment 0, unpacks them, and sends the appropriate
+ * instructions, register indices and memory to the instruction interface
+ * while the instruction is not HALT
+ */
+
+
+#include "emulator.h"
+
+
+#define HALT 7
+
+#define OP_LENGTH 4
+#define OP_LSB 28
+#define REG_LENGTH 3
+#define RC_LSB 0
+#define RB_LSB 3
+#define RA_LSB 6
+#define LOAD_VAL 13
+#define LOAD_PRGRM 12
+#define RA_LSB_LOAD 25
+#define LOAD_VAL_LEN 25
+
+
+
+
+static inline int get_regA(Um_opcode instr, Um_word word);
+static inline int get_B_or_val(Um_opcode instr, Um_word word);
+
+/*
+ * Runs the emulator loop and creates the registers. Reads a word from segment
+ * 0 of memory, unpacks it using bitpack, and sends the resulting data to the
+ * instruction interface. If the instruction is halt, the loop is exited
+ * and if the instruction is load program, the program counter is set to the 
+ * value in regC
+ */
+void emulator (Mem_T memory)
+{
+	Um_word reg[8] = {0,0,0,0,0,0,0,0};
+        uint32_t program_counter = 0;
+        uint32_t word;
+        Um_opcode instr = 0;
+	int regA, regB, regC;
+        
+	 while (instr != HALT) {
+	     	word = get_word(0, program_counter, memory);
+	     	instr = Bitpack_getu(word, OP_LENGTH, OP_LSB);
+	     	regA = get_regA(instr, word);
+                regB = get_B_or_val(instr, word);                
+                regC = Bitpack_getu(word, REG_LENGTH, RC_LSB);
+		perform_instr(instr, regA, regB, regC, reg, memory);
+                program_counter++;
+                if(instr == LOAD_PRGRM) {
+                        program_counter = reg[regC];
+                }
+        }
+}
+
+/*
+ * unpacks part of the word to get RegA. Unpacks a different area if it is 
+ * loadval instruction
+ */
+
+static inline int get_regA(Um_opcode instr, Um_word word)
+{
+        if (instr != LOAD_VAL) {
+                return Bitpack_getu(word, REG_LENGTH, RA_LSB); 
+        } else {
+                return Bitpack_getu(word, REG_LENGTH, RA_LSB_LOAD);
+        }
+}
+
+/* 
+ * Unpacks part of the word to get RegB. If the instruction is loadvalue,
+ * it returns the value instead of the register index
+ */
+static inline int get_B_or_val(Um_opcode instr, Um_word word)
+{
+        if (instr != LOAD_VAL) {
+                return Bitpack_getu(word, REG_LENGTH, RB_LSB);
+        } else {
+                return Bitpack_getu(word, LOAD_VAL_LEN, 0);
+        }
+}

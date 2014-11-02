@@ -1,0 +1,13 @@
+halt.um
+goto.um
+condmove.um
+loadandprint.um
+inandout.um
+print5.um
+multiply.um
+divide.um
+segstore.um
+segload.um
+NAND.um
+mapunmap.um
+time.um
